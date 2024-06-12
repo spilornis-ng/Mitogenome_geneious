@@ -1,5 +1,5 @@
-##Pipeline for Mitogenome recovery from low-coverage WGS using reference mitogenome
-##This pipeline uses Geneious prime. However, open source alternatives can be used as well
+##A crude pipeline for mitogenome recovery from low-coverage WGS using reference mitogenome
+##This pipeline uses Geneious prime
 ##You need trimmed reads for running this pipeline
 ##Here the example name Tepo refers to Tephrodornis pondicerianus. Use whatever code or sample name you want to.
 
@@ -13,7 +13,7 @@
 ##Steps 1-5 will require a linux OS or WSL, and Step 6 requires geneious in this particular case, hence can be done on any computer with the software
 
 
-############Here is the pipeline##############
+##########################
 
 
 ##Step1 - Download the reference mitogenome from NCBI or other online sources in fasta format. Closer the species to your taxa, the better.
@@ -43,12 +43,11 @@ qualimap bamqc -bam Tepo_mapped_sorted.bam -outfile results.pdf
 
 bedtools bamtofastq -i Tepo_mapped_sorted.bam -fq mitomapped_R1.fq.gz -fq2 mitomapped_R2.fq.gz
 
-
 ##Step6 - Using Geneious prime. This is definitely redundant but since we are dealing with a small data size now, Geneious makes visualizations convinient.
-#Load your reference mitogenome and mitomapped_R1.fq.gz and mitomapped_R2.fq.gz files into geneious
-#Map the R1 and R2 files to the reference in geneious. For this I use default settings and use geneious aligner.
-#You can now visualize where all the reads map on the reference mitogenome.
-#Once you get a good idea, you can generate a consensus sequence.
-#After generating the consensus sequence, transfer the annotations from the reference to your consensus sequence.
-#Make sure to use a similarity of 40-50% to ensure that annotations are transfered from your reference to the consensus sequence.
-#Your annotated consensus sequence will be the mitogenome you have extracted from your WGS dataset. 
+##Load your reference mitogenome and mitomapped_R1.fq.gz and mitomapped_R2.fq.gz files into geneious
+##Map the R1 and R2 files to the reference in geneious. For this I use default settings and use geneious aligner.
+##You can now visualize where all the reads map on the reference mitogenome.
+##Once you get a good idea, you can generate a consensus sequence.
+##After generating the consensus sequence, transfer the annotations from the reference to your consensus sequence.
+##Make sure to use a similarity of 40-50% to ensure that annotations are transfered from your reference to the consensus sequence.
+##Your annotated consensus sequence will be the mitogenome you have extracted from your WGS dataset. 
