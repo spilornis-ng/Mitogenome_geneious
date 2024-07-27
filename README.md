@@ -1,61 +1,144 @@
-##A crude pipeline for mitogenome recovery from low-coverage WGS using reference mitogenome
-##This pipeline uses Geneious prime
-##You need trimmed reads for running this pipeline
-##Here the example name Tepo refers to Tephrodornis pondicerianus. Use whatever code or sample name you want to.
+## Introduction
+1. A crude pipeline for mitogenome recovery from low-coverage WGS using reference nuclear+mitogenome or just mitogenome
+2. This pipeline uses Geneious prime
+3. You need trimmed reads for running this pipeline
 
-##Checklist of softwares required
-1. bwa
-2. bedtools
-3. samtools
-4. qualimap
-5. Geneious or any open source software
+Checklist of softwares required
+1. [bwa](https://github.com/lh3/bwa)
+2. [samtools](https://github.com/samtools/samtools)
+3. [qualimap](http://qualimap.conesalab.org/)
+4. [Geneious Prime](https://www.geneious.com/)
 
-##Steps 1-5 will require a linux OS or WSL, and Step 6 requires geneious in this particular case, hence can be done on any computer with the software
+While recovering mitogenome from whole genome resequencing data we need to address potential [NUMTs](https://en.wikipedia.org/wiki/Nuclear_mitochondrial_DNA_segment#:~:text=Nuclear%20mitochondrial%20DNA%20(NUMT)%20segments,nuclear%20genome%20of%20eukaryotic%20organisms) in our dataset. To do this we ideally require both nuclear and mitochondrial reference genomes for species of our interest or the next closest sister taxa. However, in most cases reference genomes for non-model species are not available (although this is changing rapidly). In such a case one can recover mitogenome using only mitochondrial reference of the target species or its closest sister, but this would lead to inclusion of NUMTs in the mitogenome assembly and any results of downstream analyses should be interpreted carefully. More or less the pipeline is similar for both the cases, and has been expanded upon below.
 
+Although I have used geneious to generate a consensus and annotate, one can use any open source software to do the same.
 
-##########################
+Please note that Step 5 is common for both the case scenarios.
 
+Scripts to run the pipeline on linux and HPC will be uploaded soon.
 
-##Step1 - Download the reference mitogenome from NCBI or other online sources in fasta format. Closer the species to your taxa, the better.
+## Mitogenome recovery using reference nuclear and mitgenome
 
-##Step2 - Index the reference mitogenome (BWA)
+### Step 1 - Download the reference genomes and indexing (bwa) 
+From NCBI or other online sources, download the nuclear and mitochondrial reference genome of your species of interest. In case no reference is available we can use a close sister species to our taxa.
+Merge the nuclear reference and mitochondrial reference. This will allow us to reduce the proportion of NUMTs in our mitochondrial assembly downstream. 
 
 ```
-bwa index ~/path/to/your/reference.fasta/
+cat nuclear_ref.fna mito_ref.fasta > final_ref.fna
 ```
-##Step3 - Map the trimmed reads of low-coverage WGS to the indexed mitogenome reference (BWA and samtools)
+
+Now we index the reference using bwa
+
 ```
-bwa mem -t 20 -M -R "@RG\tID:Tepo_5x\tSM:Tepo_\tLB:IlluminaWGS\tPL:ILLUMINA" \ #here I have used -t flag to specify cores, -R to add read-group to bam
-~/path/to/your/indexed/reference.fasta/ \
-~/path/to/your/R1.fq.gz \
-~/path/to/your/R2.fq.gz | \
+bwa index ~/path/to/final_ref.fna
+```
+
+
+### Step 2 - Map the trimmed reads to the indexed reference (BWA and samtools) and extract only reads mapping to the mitogenome region
+
+Now we will map the trimmed reads of our data to the indexed reference we generated in the previous step. To do that we will use bwa.
+
+```
+bwa mem -t 20 -M -R "@RG\tID:\tSM:\tLB:IlluminaWGS\tPL:ILLUMINA" \ #here I have used -t flag to specify cores, -R to add read-group to bam, do not forget to add details to the bam-header
+~/path/to/indexed/final_ref.fna \
+~/path/to/R1.fq.gz \
+~/path/to/R2.fq.gz | \
 samtools view -bh - | \
-samtools sort -@20 -T tmp -n -o Tepo_mapped_sorted.bam
+samtools sort -@20 -T tmp -o output_mapped_sorted.bam
 ```
-##Step4 - Run BAMQC to get an idea of mapping coverage and quality (qualimap)
+We will now extract the reads mapping to only the mitochondrial region. To do that we will first check the header of our mitochondrial reference fasta to know what to look for in the generated bam file.
+
 ```
-qualimap bamqc -bam Tepo_mapped_sorted.bam -outfile results.pdf
+head /path/to/mito_ref.fasta
 ```
-##Inspect the output to understand the coverage and quality of the reads mapped to the reference mitogenome
-
-##Step5 - This maybe a bit complex, but it just seemed easier for me to think at the time.
-##We extract only the reads that map to the mitogenome reference. This will lead to fairly small and manageable R1 and R2 fastq files.
-##Using this it makes our downstream work less intensive as we will discard all the reads that do not map to the mitogenome (>99 percent of total reads)
 ```
-bedtools bamtofastq -i Tepo_mapped_sorted.bam -fq mitomapped_R1.fq.gz -fq2 mitomapped_R2.fq.gz
+>NC_042191.1 Culicicapa ceylonensis mitochondrion, complete genome
+GTCCCTGTAGCTTACAAAAAGCATGACACTGAAGATGTCAAGACGGCTGCCATATGCACCCAAGGACAAA
+AGACTTAGTCCTAACCTTACTGTTGGTTTTTGCTAGACATATACATGCAAGTATCCGCGCGCCAGTGTAG
 ```
-##Step6 - Using Geneious prime. This is definitely redundant but since we are dealing with a small data size now, Geneious makes visualizations convinient.
+The head command will print out the first few lines of the fasta file. Note down the accession number afte **>** (in this case **NC_042191.1**). We are now going to use samtools to extract the reads mapping to this region.
 
-##Load your reference mitogenome and mitomapped_R1.fq.gz and mitomapped_R2.fq.gz files into geneious
+```
+samtools view output_mapped_sorted.bam "NC_042191.1" > output_mitomapped_sorted.bam
+```
+We now have the bam file consisting of only reads mapped to the mitogenome region. Do note that the file size reduces considerably as < 98% of the reads will map to the mitogenome.
 
-##Map the R1 and R2 files to the reference in geneious. For this I use default settings and use geneious aligner.
 
-##You can now visualize where all the reads map on the reference mitogenome.
+### Step 3 - Run BAMQC to get an idea of mapping coverage and quality (qualimap)
+Using qualimap bamqc we will assess the mapping coverage and quality
+```
+qualimap bamqc -bam output_mitomapped_sorted.bam -outfile results.pdf
+```
+Inspect the output to understand the coverage and quality of the reads mapped to the mitogenome region. We can now move to Step 5 to generate a consensus mitogenome and annotate.
 
-##Once you get a good idea, you can generate a consensus sequence.
 
-##After generating the consensus sequence, transfer the annotations from the reference to your consensus sequence.
+## Mitogenome recovery using mitogenome reference only
+### Step 1 - Download the mitogenome reference and index (bwa) 
+From NCBI or other online sources, download the mitochondrial reference genome of your species of interest. In case no reference is available we can use a close sister species to our taxa.
 
-##Make sure to use a similarity of 40-50% to ensure that annotations are transfered from your reference to the consensus sequence.
+Now we index the reference using bwa
 
-##Your annotated consensus sequence will be the mitogenome you have extracted from your WGS dataset. 
+```
+bwa index ~/path/to/mito_ref.fasta
+```
+
+### Step 2 - Map the trimmed reads to the indexed reference (BWA and samtools)
+
+Now we will map the trimmed reads of our data to the indexed reference we generated in the previous step. To do that we will use bwa.
+
+```
+bwa mem -t 20 -M -R "@RG\tID:\tSM:\tLB:IlluminaWGS\tPL:ILLUMINA" \ #here I have used -t flag to specify cores, -R to add read-group to bam, do not forget to add details to the bam-header
+~/path/to/indexed/mito_ref.fasta/ \
+~/path/to/R1.fq.gz \
+~/path/to/R2.fq.gz | \
+samtools view -bh - | \
+samtools sort -@20 -T tmp -o output_mapped_sorted.bam
+```
+
+### Step 3 - Run BAMQC to get an idea of mapping coverage and quality (qualimap)
+Using qualimap bamqc we will assess the mapping coverage and quality
+```
+qualimap bamqc -bam output_mapped_sorted.bam -outfile results.pdf
+```
+Inspect the output to understand the coverage and quality of the reads mapped to the reference mitogenome. Note that < 98% of our reads have mapped.
+
+### Step 4 - Extract only mapped reads (samtools)
+As we just used mitogenome reference, we can proceed to extract only mapped reads. To do this we will use samtools
+```
+samtools view -b -F 4 -o output_mitomapped_sorted.bam output_mapped_sorted.bam
+```
+
+We are now ready to proceed to the Step 5 to generate consensus mitogenome and annotate.
+
+## Step 5 - Using Geneious prime
+Import the final bam file into geneious using **File > Import > Files**
+
+Download the same reference mitogenome (only mitogenome reference) that was used in generating the bam file using NCBI database in the geneious software.
+![download (6)](https://github.com/user-attachments/assets/1b84ac18-7dfa-45a5-b4ed-f0ad85e9e4c2)
+![download (7)](https://github.com/user-attachments/assets/1dc1ea70-b614-4c79-a4ae-d797b100ef9e)
+
+
+You can now visualize where all the reads map on the reference mitogenome.
+
+![download](https://github.com/user-attachments/assets/c54d43c2-d9e0-498d-9c9c-cf6191eeb01a)
+
+
+Once you get a good idea, you can generate a consensus sequence. To do this select **Tools > Generate Consensus Seqeunce**
+
+![download (1)](https://github.com/user-attachments/assets/d0af7eb9-1ba3-4a7c-a493-dbb41b5f12eb)
+![download (2)](https://github.com/user-attachments/assets/57cc17b3-cc44-4f93-9b7d-a579ad9fed83)
+
+
+
+After generating the consensus sequence, transfer the annotations from the reference mitogenome sequence by checking the checkbox under Annotations and Tracks tab.
+
+![download (3)](https://github.com/user-attachments/assets/9b1f43f6-ec2e-4892-9de6-416655b32ded)
+
+Make sure to use a similarity of 40-50% to ensure that annotations are transfered from your reference to the consensus sequence.
+
+In case we are interested in circularizing the mitogenome we can do it using **Sequence > Circularize Sequence**
+![download (4)](https://github.com/user-attachments/assets/288b0874-6912-4ca1-a480-dad0002623b8)
+![download (5)](https://github.com/user-attachments/assets/19b67558-2d9c-4fad-ae98-7f5a8dc64b8d)
+
+This will give us the final circularized annotated mitogenome which has beene recovered from the whole-genome dataset
+
