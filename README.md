@@ -17,7 +17,7 @@ Please note that Step 5 is common for both the case scenarios.
 
 ## Mitogenome recovery using reference nuclear and mitgenome
 
-### Step 1 - Download the reference genomes and indexing (bwa) 
+### Step 1 - Download the reference genomes and index (bwa) 
 From NCBI or other online sources, download the nuclear and mitochondrial reference genome of your species of interest. In case no reference is available we can use a close sister species to our taxa.
 Merge the nuclear reference and mitochondrial reference. This will allow us to reduce the proportion of NUMTs in our mitochondrial assembly downstream. 
 
@@ -101,7 +101,7 @@ qualimap bamqc -bam output_mapped_sorted.bam -outfile results.pdf
 Inspect the output to understand the coverage and quality of the reads mapped to the reference mitogenome. Note that < 98% of our reads have mapped.
 
 ### Step 4 - Extract only mapped reads (samtools)
-As we just used mitogenome reference, we can proceed to extract only mapped reads. To do this we will use samtools
+Now we will extract only the reads mapped to the reference mitogenome. To do this we will use samtools
 ```
 samtools view -b -F 4 -o output_mitomapped_sorted.bam output_mapped_sorted.bam
 ```
