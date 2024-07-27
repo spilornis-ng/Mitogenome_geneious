@@ -15,8 +15,6 @@ Although I have used geneious to generate a consensus and annotate, one can use 
 
 Please note that Step 5 is common for both the case scenarios.
 
-Scripts to run the pipeline on linux and HPC will be uploaded soon.
-
 ## Mitogenome recovery using reference nuclear and mitgenome
 
 ### Step 1 - Download the reference genomes and indexing (bwa) 
