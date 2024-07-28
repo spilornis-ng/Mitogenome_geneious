@@ -54,7 +54,7 @@ head /path/to/mito_ref.fasta
 GTCCCTGTAGCTTACAAAAAGCATGACACTGAAGATGTCAAGACGGCTGCCATATGCACCCAAGGACAAA
 AGACTTAGTCCTAACCTTACTGTTGGTTTTTGCTAGACATATACATGCAAGTATCCGCGCGCCAGTGTAG
 ```
-The head command will print out the first few lines of the fasta file. Note down the accession number afte **>** (in this case **NC_042191.1**). We are now going to use samtools to extract the reads mapping to this region.
+The head command will print out the first few lines of the fasta file. Note down the accession number after **>** (in this case **NC_042191.1**). We are now going to use samtools to extract the reads mapping to this region.
 
 ```
 samtools view output_mapped_sorted.bam "NC_042191.1" > output_mitomapped_sorted.bam
@@ -128,7 +128,7 @@ Once you get a good idea, you can generate a consensus sequence. To do this sele
 
 
 
-After generating the consensus sequence, transfer the annotations from the reference mitogenome sequence by checking the checkbox under Annotations and Tracks tab.
+After generating the consensus sequence, transfer the annotations from the reference mitogenome sequence by checking the checkbox under Annotate and Predict tab.
 
 ![download (3)](https://github.com/user-attachments/assets/9b1f43f6-ec2e-4892-9de6-416655b32ded)
 
